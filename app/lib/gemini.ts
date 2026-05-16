@@ -41,17 +41,22 @@ async function generateContent(parts: GeminiPart[], options?: { temperature?: nu
 const labelPrompt = `You are a warm, practical nutrition companion. Analyze the uploaded food photo and return ONLY valid JSON.
 Estimate nutrition in the style and ordering of the U.S. FDA Nutrition Facts label: serving information, calories, nutrients, and % Daily Value when possible.
 Use the FDA label principles: serving size drives all nutrient amounts; 5% DV or less is low; 20% DV or more is high; saturated fat, sodium, and added sugars are nutrients to limit; dietary fiber, vitamin D, calcium, iron, and potassium are nutrients to encourage.
+When a value can be estimated, include numeric amountValue, unit, and dailyValuePercent fields so the app can multiply servings and classify %DV. Use null for nutrients that do not have a %DV, such as total sugars or trans fat.
 Be transparent that photo estimates are approximate. Do not diagnose or give medical advice.
 JSON shape:
 {
   "foodName": string,
   "confidence": "low" | "medium" | "high",
   "servingSize": string,
+  "servingSizeMetric"?: string,
   "servingsPerContainer": string,
+  "servingsPerContainerValue"?: number,
   "calories": number,
-  "nutrients": [{"label": string, "amount": string, "dailyValue"?: string, "emphasis"?: "limit" | "encourage" | "neutral"}],
+  "labelType"?: "standard_label" | "dual_column_label" | "single_ingredient_sugar_label",
+  "nutrients": [{"key"?: string, "label": string, "amount": string, "amountValue"?: number, "unit"?: string, "dailyValue"?: string, "dailyValuePercent"?: number | null, "emphasis"?: "limit" | "encourage" | "neutral"}],
   "ingredientsLikely": string[],
   "healthNotes": string[],
+  "comparisonNotes"?: string[],
   "conversationStarter": string,
   "disclaimer": string
 }`;
@@ -98,7 +103,7 @@ export async function chatAboutFood(analysis: NutritionAnalysis, messages: ChatM
       {
         text: `You are Food Buddy, a friendly nutrition chat companion.
 Make the conversation feel natural: acknowledge the user's wording, answer directly, ask at most one thoughtful follow-up, and keep responses concise unless the user asks for depth.
-Use this nutrition estimate as shared context, but do not pretend it is lab-tested. Avoid medical diagnosis.
+Use this nutrition estimate as shared context, but do not pretend it is lab-tested. Avoid medical diagnosis. Follow FDA label-reading logic: serving size drives the numbers, 5% DV or less is low, 20% DV or more is high, and total sugars are not the same as added sugars.
 
 Nutrition estimate:
 ${compactNutritionContext(analysis)}
