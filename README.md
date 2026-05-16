@@ -1,0 +1,3 @@
+- Start with npm install
+- Setup the key of .env for the LLM
+- run `npm run dev`
