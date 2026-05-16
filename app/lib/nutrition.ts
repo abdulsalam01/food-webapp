@@ -1,4 +1,4 @@
-import type { NutritionAnalysis } from "../types/nutrition";
+import type { DailyValueStatus, NutritionAnalysis, NutrientCalculation, NutrientEmphasis, NutrientValue } from "../types/nutrition";
 
 export const emptyLabelNutrients = [
   "Total Fat",
@@ -17,36 +17,159 @@ export const emptyLabelNutrients = [
   "Potassium"
 ];
 
-export const demoAnalysis: NutritionAnalysis = {
-  foodName: "Estimated mixed meal",
-  confidence: "medium",
-  servingSize: "1 photographed plate",
-  servingsPerContainer: "1",
-  calories: 540,
-  nutrients: [
-    { label: "Total Fat", amount: "22g", dailyValue: "28%", emphasis: "neutral" },
-    { label: "Saturated Fat", amount: "6g", dailyValue: "30%", emphasis: "limit" },
-    { label: "Trans Fat", amount: "0g", emphasis: "limit" },
-    { label: "Cholesterol", amount: "75mg", dailyValue: "25%", emphasis: "neutral" },
-    { label: "Sodium", amount: "820mg", dailyValue: "36%", emphasis: "limit" },
-    { label: "Total Carbohydrate", amount: "58g", dailyValue: "21%", emphasis: "neutral" },
-    { label: "Dietary Fiber", amount: "7g", dailyValue: "25%", emphasis: "encourage" },
-    { label: "Total Sugars", amount: "9g", emphasis: "neutral" },
-    { label: "Added Sugars", amount: "2g", dailyValue: "4%", emphasis: "limit" },
-    { label: "Protein", amount: "28g", emphasis: "encourage" },
-    { label: "Vitamin D", amount: "1mcg", dailyValue: "6%", emphasis: "encourage" },
-    { label: "Calcium", amount: "180mg", dailyValue: "15%", emphasis: "encourage" },
-    { label: "Iron", amount: "3mg", dailyValue: "15%", emphasis: "encourage" },
-    { label: "Potassium", amount: "780mg", dailyValue: "15%", emphasis: "encourage" }
-  ],
-  ingredientsLikely: ["lean protein", "grain or starch", "vegetables", "sauce or seasoning"],
-  healthNotes: [
-    "Sodium looks like the nutrient to watch most closely.",
-    "There is a helpful amount of protein and fiber for fullness."
-  ],
-  conversationStarter: "Tell me what you liked about this meal, and I can help you tune the portions or balance it with the rest of your day.",
-  disclaimer: "Demo estimate only. Photo-based nutrition is approximate and is not medical advice."
+export const nutrientKeys = {
+  limit: ["saturated_fat", "sodium", "added_sugars"],
+  encourage: ["dietary_fiber", "vitamin_d", "calcium", "iron", "potassium"]
 };
+
+export const dailyValueReferences = {
+  saturated_fat: { dailyValue: 20, unit: "g", goal: "less_than" },
+  sodium: { dailyValue: 2300, unit: "mg", goal: "less_than" },
+  dietary_fiber: { dailyValue: 28, unit: "g", goal: "at_least" },
+  added_sugars: { dailyValue: 50, unit: "g", goal: "less_than" },
+  vitamin_d: { dailyValue: 20, unit: "mcg", goal: "at_least" },
+  calcium: { dailyValue: 1300, unit: "mg", goal: "at_least" },
+  iron: { dailyValue: 18, unit: "mg", goal: "at_least" },
+  potassium: { dailyValue: 4700, unit: "mg", goal: "at_least" }
+} as const;
+
+export const demoAnalysis: NutritionAnalysis = {
+  foodName: "Frozen Lasagna",
+  confidence: "medium",
+  servingSize: "1 cup",
+  servingSizeMetric: "227g",
+  servingsPerContainer: "4",
+  servingsPerContainerValue: 4,
+  labelType: "dual_column_label",
+  calories: 280,
+  nutrients: [
+    { key: "total_fat", label: "Total Fat", amount: "9g", amountValue: 9, unit: "g", dailyValue: "12%", dailyValuePercent: 12, emphasis: "neutral" },
+    { key: "saturated_fat", label: "Saturated Fat", amount: "4.5g", amountValue: 4.5, unit: "g", dailyValue: "23%", dailyValuePercent: 23, emphasis: "limit" },
+    { key: "trans_fat", label: "Trans Fat", amount: "0g", amountValue: 0, unit: "g", dailyValuePercent: null, emphasis: "limit" },
+    { key: "cholesterol", label: "Cholesterol", amount: "35mg", amountValue: 35, unit: "mg", dailyValue: "12%", dailyValuePercent: 12, emphasis: "neutral" },
+    { key: "sodium", label: "Sodium", amount: "850mg", amountValue: 850, unit: "mg", dailyValue: "37%", dailyValuePercent: 37, emphasis: "limit" },
+    { key: "total_carbohydrate", label: "Total Carbohydrate", amount: "34g", amountValue: 34, unit: "g", dailyValue: "12%", dailyValuePercent: 12, emphasis: "neutral" },
+    { key: "dietary_fiber", label: "Dietary Fiber", amount: "4g", amountValue: 4, unit: "g", dailyValue: "14%", dailyValuePercent: 14, emphasis: "encourage" },
+    { key: "total_sugars", label: "Total Sugars", amount: "6g", amountValue: 6, unit: "g", dailyValuePercent: null, emphasis: "neutral" },
+    { key: "added_sugars", label: "Added Sugars", amount: "0g", amountValue: 0, unit: "g", dailyValue: "0%", dailyValuePercent: 0, emphasis: "limit" },
+    { key: "protein", label: "Protein", amount: "15g", amountValue: 15, unit: "g", dailyValuePercent: null, emphasis: "neutral" },
+    { key: "vitamin_d", label: "Vitamin D", amount: "0mcg", amountValue: 0, unit: "mcg", dailyValue: "0%", dailyValuePercent: 0, emphasis: "encourage" },
+    { key: "calcium", label: "Calcium", amount: "320mg", amountValue: 320, unit: "mg", dailyValue: "25%", dailyValuePercent: 25, emphasis: "encourage" },
+    { key: "iron", label: "Iron", amount: "1.6mg", amountValue: 1.6, unit: "mg", dailyValue: "8%", dailyValuePercent: 8, emphasis: "encourage" },
+    { key: "potassium", label: "Potassium", amount: "510mg", amountValue: 510, unit: "mg", dailyValue: "10%", dailyValuePercent: 10, emphasis: "encourage" }
+  ],
+  ingredientsLikely: ["pasta", "tomato sauce", "cheese", "seasoned beef or vegetables"],
+  healthNotes: [
+    "Serving size is the anchor: eating 2 cups doubles calories, nutrient amounts, and %DV.",
+    "Sodium and saturated fat are high per serving, while calcium contributes a useful amount."
+  ],
+  comparisonNotes: ["Use %DV to compare products, but first check whether serving sizes match."],
+  conversationStarter: "I read this like an FDA Nutrition Facts label: start with serving size, then calories, then %DV. How many servings do you expect to eat?",
+  disclaimer: "Demo estimate only. Nutrition guidance is general education based on FDA label-reading principles and is not medical advice."
+};
+
+const keyFromLabel = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+export function parseAmount(amount: string) {
+  const match = amount.match(/([\d.]+)\s*([a-zA-Zµ]+)?/);
+  if (!match) return {};
+  return { amountValue: Number(match[1]), unit: match[2]?.replace("µ", "mc") };
+}
+
+export function getDailyValuePercent(nutrient: NutrientValue) {
+  if (typeof nutrient.dailyValuePercent === "number") return nutrient.dailyValuePercent;
+  if (nutrient.dailyValuePercent === null) return null;
+  if (!nutrient.dailyValue) return null;
+  const parsed = Number(nutrient.dailyValue.replace(/[^\d.]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function interpretDV(percent: number | null | undefined): DailyValueStatus {
+  if (percent === null || percent === undefined) return "No %DV Available";
+  if (percent <= 5) return "Low";
+  if (percent >= 20) return "High";
+  return "Moderate";
+}
+
+export function normalizeNutrient(nutrient: NutrientValue): NutrientValue {
+  const parsed = parseAmount(nutrient.amount);
+  const key = nutrient.key ?? keyFromLabel(nutrient.label);
+  const dailyValuePercent = getDailyValuePercent(nutrient);
+  let emphasis: NutrientEmphasis = nutrient.emphasis ?? "neutral";
+
+  if (nutrientKeys.limit.includes(key)) emphasis = "limit";
+  if (nutrientKeys.encourage.includes(key)) emphasis = "encourage";
+
+  return {
+    ...nutrient,
+    key,
+    amountValue: nutrient.amountValue ?? parsed.amountValue,
+    unit: nutrient.unit ?? parsed.unit,
+    dailyValue: nutrient.dailyValue ?? (typeof dailyValuePercent === "number" ? `${dailyValuePercent}%` : undefined),
+    dailyValuePercent,
+    emphasis
+  };
+}
+
+export function multiplyAmount(nutrient: NutrientValue, multiplier: number) {
+  const normalized = normalizeNutrient(nutrient);
+  if (typeof normalized.amountValue !== "number" || !normalized.unit) return normalized.amount;
+  const value = normalized.amountValue * multiplier;
+  return `${Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 1 })}${normalized.unit}`;
+}
+
+function adviceFor(nutrient: NutrientValue, actualStatus: DailyValueStatus) {
+  const normalized = normalizeNutrient(nutrient);
+  if (normalized.emphasis === "limit" && actualStatus === "High") {
+    return `High - Limit this nutrient. Consider balancing this with lower-${normalized.label.toLowerCase()} foods during the day.`;
+  }
+  if (normalized.emphasis === "encourage" && actualStatus === "High") {
+    return "Good source / high contribution for a nutrient many people need more of.";
+  }
+  if (actualStatus === "No %DV Available") {
+    return "FDA labels do not always provide a %DV for this nutrient, so use the gram or milligram amount for context.";
+  }
+  return `${actualStatus} contribution based on FDA's 5% low and 20% high guide.`;
+}
+
+export function calculateNutrients(nutrients: NutrientValue[], servingsConsumed: number): NutrientCalculation[] {
+  return nutrients.map((raw) => {
+    const nutrient = normalizeNutrient(raw);
+    const dailyValuePercent = getDailyValuePercent(nutrient);
+    const actualDailyValuePercent = typeof dailyValuePercent === "number" ? dailyValuePercent * servingsConsumed : null;
+    const actualDailyValueStatus = interpretDV(actualDailyValuePercent);
+    const dailyValueStatus = interpretDV(dailyValuePercent);
+    const badge = nutrient.emphasis === "limit" && actualDailyValueStatus === "High"
+      ? "Limit"
+      : nutrient.emphasis === "encourage" && actualDailyValueStatus === "High"
+        ? "Good Source"
+        : actualDailyValueStatus;
+
+    return {
+      ...nutrient,
+      dailyValueStatus,
+      actualAmount: multiplyAmount(nutrient, servingsConsumed),
+      actualDailyValuePercent,
+      actualDailyValueStatus,
+      badge,
+      advice: adviceFor(nutrient, actualDailyValueStatus)
+    };
+  });
+}
+
+export function getServingsPerContainerValue(analysis: NutritionAnalysis) {
+  if (typeof analysis.servingsPerContainerValue === "number") return analysis.servingsPerContainerValue;
+  const parsed = Number.parseFloat(analysis.servingsPerContainer);
+  return Number.isFinite(parsed) ? parsed : 1;
+}
+
+export function compareServingSizes(primary: NutritionAnalysis, secondary: NutritionAnalysis) {
+  const left = `${primary.servingSize}${primary.servingSizeMetric ? ` (${primary.servingSizeMetric})` : ""}`;
+  const right = `${secondary.servingSize}${secondary.servingSizeMetric ? ` (${secondary.servingSizeMetric})` : ""}`;
+  return left.toLowerCase() === right.toLowerCase()
+    ? "Serving sizes match, so %DV comparison is more straightforward."
+    : `Serving sizes differ (${left} vs ${right}), so comparison may be misleading until portions are adjusted.`;
+}
 
 function isNutritionAnalysis(value: unknown): value is NutritionAnalysis {
   const analysis = value as NutritionAnalysis;
@@ -69,7 +192,10 @@ export function assertNutritionAnalysis(value: unknown): NutritionAnalysis {
   if (!isNutritionAnalysis(value)) {
     throw new Error("Invalid nutrition analysis payload.");
   }
-  return value;
+  return {
+    ...value,
+    nutrients: value.nutrients.map(normalizeNutrient)
+  };
 }
 
 export function parseJsonFromModel(text: string): NutritionAnalysis {
@@ -82,8 +208,9 @@ export function compactNutritionContext(analysis: NutritionAnalysis) {
   return [
     `Food: ${analysis.foodName}`,
     `Serving: ${analysis.servingSize}; servings: ${analysis.servingsPerContainer}`,
-    `Calories: ${analysis.calories}`,
-    `Nutrients: ${analysis.nutrients.map((nutrient) => `${nutrient.label} ${nutrient.amount}${nutrient.dailyValue ? ` (${nutrient.dailyValue} DV)` : ""}`).join(", ")}`,
+    `Calories per serving: ${analysis.calories}`,
+    `Label type: ${analysis.labelType ?? "standard_label"}`,
+    `Nutrients: ${analysis.nutrients.map((nutrient) => `${nutrient.label} ${nutrient.amount}${nutrient.dailyValue ? ` (${nutrient.dailyValue} DV, ${interpretDV(getDailyValuePercent(nutrient))})` : ""}`).join(", ")}`,
     `Likely ingredients: ${analysis.ingredientsLikely.join(", ")}`,
     `Notes: ${analysis.healthNotes.join(" ")}`
   ].join("\n");
